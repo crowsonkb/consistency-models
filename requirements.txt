@@ -1,0 +1,8 @@
+einshape
+flax
+jax
+git+https://github.com/crowsonkb/jax-wavelets
+numpy
+optax
+Pillow
+rich
