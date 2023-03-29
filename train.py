@@ -85,7 +85,7 @@ def main():
 
     target = {"train": (None, None), "val": (None, None)}
     d_ = flax.serialization.from_bytes(target, open("mnist.msgpack", "rb").read())
-    d_ = d_["train"][0]
+    d_ = jnp.array(d_["train"][0])
     dataset = d_ / 255
     size = dataset.shape[1:3]
     ch = dataset.shape[3]
