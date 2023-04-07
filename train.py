@@ -215,7 +215,7 @@ def main():
         aux = {"loss_s": loss_s, "loss_c": loss_c}
         return state, aux
 
-    @Partial(pjit, static_argnums=2)
+    @Partial(pjit, out_shardings=jax.sharding.PartitionSpec(None), static_argnums=2)
     def sample(state, key, n):
         tmax = 160.0
 
@@ -235,12 +235,10 @@ def main():
         n = rows * cols
         n_adj = math.ceil(n / jax.device_count()) * jax.device_count()
         x0 = sample(state, key, n_adj)
-        x0 = multihost_utils.global_array_to_host_local_array(
-            x0, mesh, jax.sharding.PartitionSpec(None)
-        )
-        x0 = x0[:n]
-        grid = einshape("(ab)hwc->(ah)(bw)c", x0, a=rows, b=cols)
-        grid = np.array(jnp.round(jnp.clip(grid * 255, 0, 255)).astype(jnp.uint8))
+        with jax.spmd_mode("allow_all"):
+            x0 = x0[:n]
+            grid = einshape("(ab)hwc->(ah)(bw)c", x0, a=rows, b=cols)
+            grid = np.array(jnp.round(jnp.clip(grid * 255, 0, 255)).astype(jnp.uint8))
         if jax.process_index() == 0:
             if ch == 1:
                 grid = grid[..., 0]
